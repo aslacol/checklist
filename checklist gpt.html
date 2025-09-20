@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lista de Chequeo - Vinculación Laboral</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Fuente -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <!-- Tom Select (buscador en combo) -->
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .container { max-width: 1200px; }
+    .progress-bar-fill { transition: width 0.5s ease-in-out; }
+    select, input[type="text"], input[type="date"], input[type="number"], textarea { transition: all 0.25s ease; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .status-si { background-color: #22C55E; }
+    .status-no { background-color: #EF4444; }
+    .status-na { background-color: #A1A1AA; }
+    .status-pend { background-color: #F59E0B; }
+
+    .ts-control { border-radius: 0.5rem; border-color: rgb(209 213 219); padding: 0.5rem; }
+    .ts-control:focus { box-shadow: 0 0 0 2px rgb(59 130 246 / 0.5); border-color: rgb(59 130 246); }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 sm:p-6 md:p-8">
+  <div class="container mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+
+    <!-- Encabezado -->
+    <header class="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white p-6 sm:p-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold">Lista de Chequeo de Documentación</h1>
+          <p class="text-white/90 mt-1">Proceso de Vinculación Laboral</p>
+        </div>
+        <div class="text-right">
+          <span class="text-lg font-bold">ARNOLD LÓPEZ AYALA</span>
+          <p class="text-sm text-white/90">NIT: 900.XXX.XXX-X</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Barra de acciones -->
+    <div class="px-6 sm:px-8 -mt-4">
+      <div class="bg-white rounded-xl shadow-lg p-4 flex flex-wrap gap-2 justify-between items-center">
+        <div class="flex gap-2 items-center text-sm">
+          <span class="px-2 py-1 rounded-full bg-green-100 text-green-700">Entregado</span>
+          <span class="px-2 py-1 rounded-full bg-amber-100 text-amber-700">Pendiente</span>
+          <span class="px-2 py-1 rounded-full bg-red-100 text-red-700">No cumple</span>
+          <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-700">N/A</span>
+        </div>
+        <div class="flex gap-2">
+          <button id="blankBtn" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Imprimir formato en blanco</button>
+          <button id="reportBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">Generar reporte</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6 sm:p-8">
+
+      <!-- Información del Candidato -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Información del Candidato</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div>
+            <label for="employeeName" class="block text-sm font-medium text-gray-600 mb-1">Nombre Completo</label>
+            <input type="text" id="employeeName" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ej: Ana María Pérez">
+          </div>
+          <div>
+            <label for="employeeId" class="block text-sm font-medium text-gray-600 mb-1">N° de Identificación</label>
+            <input type="text" id="employeeId" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ej: 1.0XX.XXX.XXX">
+          </div>
+          <div>
+            <label for="employeePosition" class="block text-sm font-medium text-gray-600 mb-1">Cargo a Desempeñar</label>
+            <input type="text" id="employeePosition" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ej: Analista de Talento Humano">
+          </div>
+
+          <div>
+            <label for="contractType" class="block text-sm font-medium text-gray-600 mb-1">Tipo de Vinculación / Contrato</label>
+            <select id="contractType" class="w-full p-2 border border-gray-300 rounded-lg"></select>
+          </div>
+
+          <!-- Fechas dinámicas -->
+          <div id="startDateWrapper">
+            <label for="startDate" id="startDateLabel" class="block text-sm font-medium text-gray-600 mb-1">Fecha de inicio</label>
+            <input type="date" id="startDate" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div id="endDateWrapper" class="hidden">
+            <label for="endDate" class="block text-sm font-medium text-gray-600 mb-1">Fecha de finalización</label>
+            <input type="date" id="endDate" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <!-- Combos con buscador -->
+          <div>
+            <label for="epsSelect" class="block text-sm font-medium text-gray-600 mb-1">EPS</label>
+            <select id="epsSelect" class="w-full p-2 border border-gray-300 rounded-lg"></select>
+          </div>
+          <div>
+            <label for="pensionSelect" class="block text-sm font-medium text-gray-600 mb-1">Fondo de Pensiones</label>
+            <select id="pensionSelect" class="w-full p-2 border border-gray-300 rounded-lg"></select>
+          </div>
+          <div>
+            <label for="cesantiasSelect" class="block text-sm font-medium text-gray-600 mb-1">Fondo de Cesantías</label>
+            <select id="cesantiasSelect" class="w-full p-2 border border-gray-300 rounded-lg"></select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Barra de Progreso -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Progreso de Verificación</h2>
+        <div class="flex items-center gap-4">
+          <div class="w-full bg-gray-200 rounded-full h-4">
+            <div id="progressBarFill" class="bg-blue-600 h-4 rounded-full progress-bar-fill" style="width: 0%;"></div>
+          </div>
+          <span id="progressText" class="font-semibold text-blue-600 text-lg">0%</span>
+        </div>
+      </section>
+
+      <!-- Tabla de Chequeo -->
+      <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border-separate" style="border-spacing: 0 10px;">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-l-lg">Ítem</th>
+              <th class="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Documento</th>
+              <th class="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Criterio de Cumplimiento / Verificación Legal</th>
+              <th class="p-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Cant.</th>
+              <th class="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Calidad/Estado</th>
+              <th class="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
+              <th class="p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider rounded-r-lg">Observaciones</th>
+            </tr>
+          </thead>
+          <tbody id="checklist-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Acciones -->
+      <div class="mt-8 flex flex-col sm:flex-row justify-end gap-4">
+        <button id="clearBtn" class="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg shadow hover:bg-gray-200">Limpiar Formulario</button>
+        <button id="blankBtnBottom" class="px-6 py-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg shadow hover:bg-gray-50">Imprimir formato en blanco</button>
+        <button id="reportBtnBottom" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700">Generar Reporte</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Reporte (Digital) -->
+  <div id="reportModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-[9999]">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] transform transition-all scale-95 opacity-0 flex flex-col" id="reportModalContent">
+      <div class="flex justify-between items-center border-b p-6">
+        <h2 class="text-2xl font-bold text-gray-800">Reporte de Verificación Documental</h2>
+        <button data-close="report" class="text-gray-500 hover:text-gray-800 text-2xl leading-5">&times;</button>
+      </div>
+      <div id="report-content" class="p-6 overflow-y-auto flex-1 leading-relaxed"></div>
+      <div class="p-6 border-t bg-white sticky bottom-0 flex justify-end gap-3">
+        <button data-close="report" class="px-5 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Cerrar</button>
+        <button id="printReportBtn" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700">Imprimir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Formato en Blanco (Manual) -->
+  <div id="blankModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-[9999]">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] transform transition-all scale-95 opacity-0 flex flex-col" id="blankModalContent">
+      <div class="flex justify-between items-center border-b p-6">
+        <h2 class="text-2xl font-bold text-gray-800">Formato de Lista de Chequeo (Manual)</h2>
+        <button data-close="blank" class="text-gray-500 hover:text-gray-800 text-2xl leading-5">&times;</button>
+      </div>
+      <div id="blank-content" class="p-6 overflow-y-auto flex-1"></div>
+      <div class="p-6 border-t bg-white sticky bottom-0 flex justify-end gap-3">
+        <button data-close="blank" class="px-5 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Cerrar</button>
+        <button id="printBlankBtn" class="px-6 py-2 bg-gray-800 text-white font-semibold rounded-lg shadow hover:bg-black">Imprimir</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const STORAGE_KEY = 'lista_chequeo_v6';
+
+      // Documentos base
+      const documents = [
+        { category: 'IDENTIFICACIÓN Y PERSONALES', name: 'Documento de identidad ampliado al 150%', criteria: 'Verificar nitidez, legibilidad y correspondencia con datos del candidato. Vigente.' },
+        { category: 'IDENTIFICACIÓN Y PERSONALES', name: 'Hoja de vida actualizada y firmada', criteria: 'Firmada por el trabajador. Datos consistentes con soportes.' },
+        { category: 'IDENTIFICACIÓN Y PERSONALES', name: 'Certificado de antecedentes disciplinarios (Procuraduría)', criteria: 'Vigente, sin inhabilidades para el cargo.' },
+        { category: 'IDENTIFICACIÓN Y PERSONALES', name: 'Certificado de antecedentes fiscales (Contraloría)', criteria: 'Vigente, sin reportes de responsabilidad fiscal.' },
+        { category: 'IDENTIFICACIÓN Y PERSONALES', name: 'Certificado de antecedentes judiciales (Policía)', criteria: 'Verificar que no presente requerimientos judiciales.' },
+        { category: 'IDENTIFICACIÓN Y PERSONALES', name: 'Registro Único Tributario (RUT)', criteria: 'Actualizado y con la actividad económica correspondiente.' },
+        { category: 'IDENTIFICACIÓN Y PERSONALES', name: 'Certificado de cuenta bancaria', criteria: 'No mayor a 30 días de expedición. Titularidad del candidato.' },
+        { category: 'IDENTIFICACIÓN Y PERSONALES', name: 'Documentos de beneficiarios (cédula, registro civil)', criteria: 'Para afiliaciones a caja de compensación y seguridad social.' },
+
+        { category: 'FORMACIÓN Y EXPERIENCIA', name: 'Acta de grado o diploma (bachiller, técnico, profesional)', criteria: 'Validar autenticidad de la institución educativa.' },
+        { category: 'FORMACIÓN Y EXPERIENCIA', name: 'Tarjeta o matrícula profesional (si aplica)', criteria: 'Vigente y activa ante el consejo profesional respectivo.' },
+        { category: 'FORMACIÓN Y EXPERIENCIA', name: 'Certificaciones de estudios complementarios', criteria: 'Coherentes con la hoja de vida y relevantes para el cargo.' },
+        { category: 'FORMACIÓN Y EXPERIENCIA', name: 'Certificaciones laborales (mínimo las 3 últimas)', criteria: 'Verificar fechas, cargo y funciones. Contactar referencias si es necesario.' },
+
+        { category: 'SEGURIDAD SOCIAL Y PARAFISCALES', name: 'Certificado de afiliación a EPS', criteria: 'Estado "Activo" o en proceso de traslado.' },
+        { category: 'SEGURIDAD SOCIAL Y PARAFISCALES', name: 'Certificado de afiliación a Fondo de Pensiones', criteria: 'Verificar estado "Activo" y correspondencia con el fondo elegido.' },
+        { category: 'SEGURIDAD SOCIAL Y PARAFISCALES', name: 'Certificado de afiliación a Fondo de Cesantías', criteria: 'Verificar afiliación o carta de solicitud de nueva afiliación.' },
+
+        { category: 'PROCESO DE SELECCIÓN Y CONTRATACIÓN', name: 'Examen médico de ingreso (concepto apto)', criteria: 'Concepto "Apto" o "Apto con recomendaciones". No mayor a 5 días hábiles.' },
+        { category: 'PROCESO DE SELECCIÓN Y CONTRATACIÓN', name: 'Contrato de trabajo firmado por las partes', criteria: 'Firmas originales, sin enmendaduras, con todos los anexos.' },
+        { category: 'PROCESO DE SELECCIÓN Y CONTRATACIÓN', name: 'Cláusula de confidencialidad y tratamiento de datos', criteria: 'Firmada por el trabajador.' },
+        { category: 'PROCESO DE SELECCIÓN Y CONTRATACIÓN', name: 'Autorización de tratamiento de datos personales', criteria: 'Firmada y diligenciada correctamente.' },
+        { category: 'PROCESO DE SELECCIÓN Y CONTRATACIÓN', name: 'Acta de inicio o de inducción firmada', criteria: 'Constancia de recibo de dotación, carné y políticas.' }
+      ];
+
+      // Contratos (unificado Término fijo)
+      const contractOptions = [
+        { label: '— Selecciona una opción —', value: '' },
+        { group: 'Contratos Laborales', options: [
+          { label: 'Término indefinido', value: 'indefinido' },
+          { label: 'Término fijo', value: 'fijo' },
+          { label: 'Obra o labor determinada', value: 'obra_labor' },
+          { label: 'Ocasional, accidental o transitorio', value: 'ocasional' },
+        ]},
+        { group: 'Formación / No laboral', options: [
+          { label: 'Contrato de aprendizaje - Etapa lectiva', value: 'aprendizaje_lectiva' },
+          { label: 'Contrato de aprendizaje - Etapa productiva', value: 'aprendizaje_productiva' },
+          { label: 'Prácticas universitarias / Pasantía (convenio)', value: 'practicas' },
+        ]},
+        { group: 'Otras modalidades', options: [
+          { label: 'Prestación de servicios (civil/comercial)', value: 'servicios' },
+        ]},
+      ];
+
+      // Contratos que requieren fecha de finalización
+      const END_DATE_REQUIRED = new Set([
+        'fijo', 'ocasional', 'aprendizaje_lectiva', 'aprendizaje_productiva', 'practicas', 'servicios'
+      ]);
+
+      // EPS (Contributivo y Ambos)
+      const EPS_CONTRIBUTIVO = [
+        'ALIANSALUD EPS',
+        'SALUD TOTAL EPS S.A.',
+        'EPS SANITAS',
+        'EPS SURA',
+        'FAMISANAR',
+        'SERVICIO OCCIDENTAL DE SALUD EPS SOS',
+        'COMFENALCO VALLE',
+        'COMPENSAR EPS',
+        'EPM - EMPRESAS PUBLICAS DE MEDELLIN',
+        'FONDO DE PASIVO SOCIAL DE FERROCARRILES NACIONALES DE COLOMBIA'
+      ];
+      const EPS_AMBOS = [
+        'COOSALUD EPS-S',
+        'NUEVA EPS',
+        'MUTUAL SER',
+        'SALUD MIA'
+      ];
+
+      // Fondos
+      const PENSION_OPTIONS = ['Colpensiones', 'Porvenir', 'Protección', 'Skandia', 'Colfondos'];
+      const CESANTIAS_OPTIONS = ['Fondo Nacional del Ahorro - FNA', 'Porvenir', 'Protección', 'Skandia', 'Colfondos'];
+
+      // DOM refs
+      const checklistBody = document.getElementById('checklist-body');
+      const progressBarFill = document.getElementById('progressBarFill');
+      const progressText = document.getElementById('progressText');
+
+      const reportBtnTop = document.getElementById('reportBtn');
+      const reportBtnBottom = document.getElementById('reportBtnBottom');
+      const reportModal = document.getElementById('reportModal');
+      const reportModalContent = document.getElementById('reportModalContent');
+      const reportContent = document.getElementById('report-content');
+      const printReportBtn = document.getElementById('printReportBtn');
+
+      const blankBtnTop = document.getElementById('blankBtn');
+      const blankBtnBottom = document.getElementById('blankBtnBottom');
+      const blankModal = document.getElementById('blankModal');
+      const blankModalContent = document.getElementById('blankModalContent');
+      const blankContent = document.getElementById('blank-content');
+      const printBlankBtn = document.getElementById('printBlankBtn');
+
+      const clearBtn = document.getElementById('clearBtn');
+
+      // Selects y fechas
+      const contractSelect = document.getElementById('contractType');
+      const epsSelect = document.getElementById('epsSelect');
+      const pensionSelect = document.getElementById('pensionSelect');
+      const cesantiasSelect = document.getElementById('cesantiasSelect');
+
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      const endDateWrapper = document.getElementById('endDateWrapper');
+      const startDateLabel = document.getElementById('startDateLabel');
+
+      // Tom Select
+      let contractTS = null, epsTS = null, pensionTS = null, cesantiasTS = null;
+
+      // Combos helpers
+      function fillContractSelect() {
+        contractSelect.innerHTML = '';
+        contractOptions.forEach(opt => {
+          if (opt.group) {
+            const og = document.createElement('optgroup');
+            og.label = opt.group;
+            opt.options.forEach(o => {
+              const option = document.createElement('option');
+              option.value = o.value;
+              option.textContent = o.label;
+              og.appendChild(option);
+            });
+            contractSelect.appendChild(og);
+          } else {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            contractSelect.appendChild(option);
+          }
+        });
+      }
+
+      function fillEPSSelect() {
+        epsSelect.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '— Selecciona o escribe —';
+        epsSelect.appendChild(placeholder);
+
+        const groups = [
+          { label: 'Régimen Contributivo', items: EPS_CONTRIBUTIVO },
+          { label: 'Ambos (Contributivo y Subsidiado)', items: EPS_AMBOS }
+        ];
+        groups.forEach(g => {
+          const og = document.createElement('optgroup');
+          og.label = g.label;
+          g.items.forEach(txt => {
+            const o = document.createElement('option');
+            o.value = txt;
+            o.textContent = txt;
+            og.appendChild(o);
+          });
+          epsSelect.appendChild(og);
+        });
+      }
+
+      function fillSimpleSelect(selectEl, options) {
+        selectEl.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '— Selecciona o escribe —';
+        selectEl.appendChild(placeholder);
+        options.forEach(txt => {
+          const option = document.createElement('option');
+          option.value = txt;
+          option.textContent = txt;
+          selectEl.appendChild(option);
+        });
+      }
+
+      function initTomSelect(el, { create = true } = {}) {
+        return new TomSelect(el, {
+          create,
+          allowEmptyOption: true,
+          placeholder: '— Selecciona o escribe —',
+          maxOptions: null,
+          sortField: [{field:'$order'},{field:'text',direction:'asc'}],
+          dropdownClass: 'bg-white border border-gray-200 rounded-lg shadow',
+          controlInput: '<input>'
+        });
+      }
+
+      // Init combos
+      fillContractSelect();
+      fillEPSSelect();
+      fillSimpleSelect(pensionSelect, PENSION_OPTIONS);
+      fillSimpleSelect(cesantiasSelect, CESANTIAS_OPTIONS);
+
+      contractTS = initTomSelect('#contractType', { create: false });
+      epsTS = initTomSelect('#epsSelect', { create: true });
+      pensionTS = initTomSelect('#pensionSelect', { create: true });
+      cesantiasTS = initTomSelect('#cesantiasSelect', { create: true });
+
+      // Checklist
+      function buildChecklist() {
+        checklistBody.innerHTML = '';
+        let currentCategory = '';
+        let itemCounter = 0;
+
+        documents.forEach((doc, idx) => {
+          if (doc.category !== currentCategory) {
+            currentCategory = doc.category;
+            checklistBody.insertAdjacentHTML('beforeend', `
+              <tr class="bg-blue-50">
+                <td colspan="7" class="p-3 font-bold text-blue-800 text-sm">${currentCategory}</td>
+              </tr>
+            `);
+          }
+          itemCounter++;
+          const row = `
+            <tr class="bg-white shadow-sm hover:bg-gray-50" data-index="${idx}">
+              <td class="p-4 font-medium text-gray-700 border-t border-l border-gray-200">${itemCounter}</td>
+              <td class="p-4 text-gray-700 font-medium border-t border-gray-200">${doc.name}</td>
+              <td class="p-4 text-gray-500 text-sm border-t border-gray-200">${doc.criteria}</td>
+              <td class="p-4 text-center border-t border-gray-200">
+                <input type="number" min="0" value="1" class="w-16 text-center p-1 border rounded-md focus:ring-1 focus:ring-blue-500">
+              </td>
+              <td class="p-4 border-t border-gray-200">
+                <select class="w-full p-1.5 border rounded-md focus:ring-1 focus:ring-blue-500 bg-white">
+                  <option>Original</option>
+                  <option>Copia</option>
+                  <option>Bueno</option>
+                  <option>Regular</option>
+                  <option>Ilegible</option>
+                </select>
+              </td>
+              <td class="p-4 border-t border-gray-200">
+                <select class="status-check w-full p-1.5 border rounded-md focus:ring-1 focus:ring-blue-500 font-semibold bg-white">
+                  <option value="pendiente" class="text-amber-600">Pendiente</option>
+                  <option value="entregado" class="text-green-600">Entregado</option>
+                  <option value="no" class="text-red-600">No cumple</option>
+                  <option value="na" class="text-gray-600">N/A</option>
+                </select>
+              </td>
+              <td class="p-4 border-t border-r border-gray-200">
+                <textarea class="w-full p-1 border rounded-md focus:ring-1 focus:ring-blue-500" rows="1" placeholder="Añadir nota..."></textarea>
+              </td>
+            </tr>
+          `;
+          checklistBody.insertAdjacentHTML('beforeend', row);
+        });
+
+        bindRowListeners();
+        updateProgress();
+      }
+      buildChecklist();
+
+      // Progreso
+      function updateProgress() {
+        const statuses = Array.from(document.querySelectorAll('.status-check'));
+        const valid = statuses.filter(s => s.value !== 'na');
+        const delivered = statuses.filter(s => s.value === 'entregado').length;
+        const total = valid.length;
+        const pct = total === 0 ? 0 : Math.round((delivered / total) * 100);
+        progressText.textContent = total === 0 ? 'N/A' : pct + '%';
+        progressBarFill.style.width = (total === 0 ? 100 : pct) + '%';
+        progressBarFill.classList.toggle('bg-gray-400', total === 0);
+        progressBarFill.classList.toggle('bg-blue-600', total !== 0);
+      }
+
+      // Fechas dinámicas por contrato
+      function updateContractDatesUI() {
+        const value = contractSelect.value;
+        const requiresEnd = END_DATE_REQUIRED.has(value);
+        endDateWrapper.classList.toggle('hidden', !requiresEnd);
+        endDateInput.required = requiresEnd;
+        startDateInput.required = true;
+        if (!requiresEnd) endDateInput.value = '';
+      }
+      function syncEndMin() {
+        if (startDateInput.value) {
+          endDateInput.min = startDateInput.value;
+          if (endDateInput.value && endDateInput.value < startDateInput.value) {
+            endDateInput.value = startDateInput.value;
+          }
+        } else endDateInput.removeAttribute('min');
+      }
+
+      // Guardado
+      let saveTimer = null;
+      function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 250); }
+      function getState() {
+        const state = {
+          employee: {
+            name: document.getElementById('employeeName').value || '',
+            id: document.getElementById('employeeId').value || '',
+            position: document.getElementById('employeePosition').value || '',
+            contract: contractSelect.value || '',
+            startDate: startDateInput.value || '',
+            endDate: endDateInput.value || '',
+            eps: epsSelect.value || '',
+            pension: pensionSelect.value || '',
+            cesantias: cesantiasSelect.value || ''
+          },
+          rows: []
+        };
+        const rows = checklistBody.querySelectorAll('tr[data-index]');
+        rows.forEach(row => {
+          const idx = +row.dataset.index;
+          const cant = row.querySelector('input[type=number]')?.value || '1';
+          const calidad = row.querySelector('td:nth-child(5) select')?.value || '';
+          const status = row.querySelector('.status-check')?.value || 'pendiente';
+          const obs = row.querySelector('textarea')?.value || '';
+          state.rows[idx] = { cant, calidad, status, obs };
+        });
+        return state;
+      }
+      function saveState(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(getState())); }catch(e){} }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return;
+          const state = JSON.parse(raw);
+          document.getElementById('employeeName').value = state.employee?.name || '';
+          document.getElementById('employeeId').value = state.employee?.id || '';
+          document.getElementById('employeePosition').value = state.employee?.position || '';
+          startDateInput.value = state.employee?.startDate || '';
+          endDateInput.value = state.employee?.endDate || '';
+
+          // Migración: fijo_menor_1 / fijo_mayor_1 -> fijo
+          let storedContract = state.employee?.contract || '';
+          if (storedContract === 'fijo_menor_1' || storedContract === 'fijo_mayor_1') storedContract = 'fijo';
+          if (storedContract) { contractSelect.value = storedContract; if (contractTS) contractTS.setValue(storedContract, true); }
+
+          if (state.employee?.eps) { epsSelect.value = state.employee.eps; if (epsTS) epsTS.setValue(state.employee.eps, true); }
+          if (state.employee?.pension) { pensionSelect.value = state.employee.pension; if (pensionTS) pensionTS.setValue(state.employee.pension, true); }
+          if (state.employee?.cesantias) { cesantiasSelect.value = state.employee.cesantias; if (cesantiasTS) cesantiasTS.setValue(state.employee.cesantias, true); }
+
+          updateContractDatesUI();
+          syncEndMin();
+
+          const rows = checklistBody.querySelectorAll('tr[data-index]');
+          rows.forEach(row => {
+            const idx = +row.dataset.index;
+            const r = state.rows?.[idx];
+            if (!r) return;
+            row.querySelector('input[type=number]').value = r.cant ?? '1';
+            row.querySelector('td:nth-child(5) select').value = r.calidad ?? 'Original';
+            row.querySelector('.status-check').value = r.status ?? 'pendiente';
+            row.querySelector('textarea').value = r.obs ?? '';
+          });
+          updateProgress();
+        } catch(e) {}
+      }
+
+      function bindRowListeners() {
+        ['employeeName','employeeId','employeePosition'].forEach(id => document.getElementById(id).addEventListener('input', scheduleSave));
+        startDateInput.addEventListener('change', () => { syncEndMin(); scheduleSave(); });
+        endDateInput.addEventListener('change', scheduleSave);
+
+        [epsSelect, pensionSelect, cesantiasSelect].forEach(el => el.addEventListener('change', scheduleSave));
+        if (epsTS) epsTS.on('change', scheduleSave);
+        if (pensionTS) pensionTS.on('change', scheduleSave);
+        if (cesantiasTS) cesantiasTS.on('change', scheduleSave);
+
+        contractSelect.addEventListener('change', () => { updateContractDatesUI(); syncEndMin(); scheduleSave(); });
+        if (contractTS) contractTS.on('change', () => { updateContractDatesUI(); syncEndMin(); scheduleSave(); });
+
+        checklistBody.querySelectorAll('tr[data-index]').forEach(row => {
+          row.querySelector('input[type=number]').addEventListener('input', scheduleSave);
+          row.querySelector('td:nth-child(5) select').addEventListener('change', scheduleSave);
+          row.querySelector('.status-check').addEventListener('change', () => { updateProgress(); scheduleSave(); });
+          row.querySelector('textarea').addEventListener('input', scheduleSave);
+        });
+      }
+
+      loadState();
+      bindRowListeners();
+      updateContractDatesUI();
+      syncEndMin();
+
+      // Limpiar
+      clearBtn.addEventListener('click', () => {
+        if (!confirm('¿Estás seguro de limpiar todo el formulario y el progreso guardado?')) return;
+        ['employeeName','employeeId','employeePosition'].forEach(id => document.getElementById(id).value = '');
+        [contractSelect, epsSelect, pensionSelect, cesantiasSelect].forEach(s => s.value = '');
+        startDateInput.value = ''; endDateInput.value = '';
+        if (contractTS) contractTS.clear(true);
+        if (epsTS) epsTS.clear(true);
+        if (pensionTS) pensionTS.clear(true);
+        if (cesantiasTS) cesantiasTS.clear(true);
+        checklistBody.querySelectorAll('tr[data-index]').forEach(row => {
+          row.querySelector('input[type=number]').value = '1';
+          row.querySelector('td:nth-child(5) select').selectedIndex = 0;
+          row.querySelector('.status-check').value = 'pendiente';
+          row.querySelector('textarea').value = '';
+        });
+        localStorage.removeItem(STORAGE_KEY);
+        updateContractDatesUI();
+        updateProgress();
+      });
+
+      // Modales superpuestos (z-index alto)
+      function closeAllDropdowns() {
+        [contractTS, epsTS, pensionTS, cesantiasTS].forEach(ts => ts && ts.close());
+        document.activeElement && document.activeElement.blur();
+      }
+      function lockBodyScroll(lock=true) {
+        document.documentElement.style.overflow = lock ? 'hidden' : '';
+        document.body.style.overflow = lock ? 'hidden' : '';
+      }
+      function openModal(which) {
+        closeAllDropdowns();
+        lockBodyScroll(true);
+        const modal = which === 'report' ? reportModal : blankModal;
+        const content = which === 'report' ? reportModalContent : blankModalContent;
+        if (which === 'report') generateReport();
+        if (which === 'blank') generateBlank();
+        modal.classList.remove('hidden'); modal.classList.add('flex');
+        setTimeout(() => { content.classList.remove('scale-95','opacity-0'); content.classList.add('scale-100','opacity-100'); }, 30);
+      }
+      function closeModal(which) {
+        const modal = which === 'report' ? reportModal : blankModal;
+        const content = which === 'report' ? reportModalContent : blankModalContent;
+        content.classList.add('scale-95','opacity-0');
+        setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); lockBodyScroll(false); }, 200);
+      }
+      document.querySelectorAll('button[data-close="report"]').forEach(b => b.addEventListener('click', () => closeModal('report')));
+      document.querySelectorAll('button[data-close="blank"]').forEach(b => b.addEventListener('click', () => closeModal('blank')));
+
+      reportBtnTop.addEventListener('click', () => openModal('report'));
+      reportBtnBottom.addEventListener('click', () => openModal('report'));
+      blankBtnTop.addEventListener('click', () => openModal('blank'));
+      blankBtnBottom.addEventListener('click', () => openModal('blank'));
+
+      // Reporte (modal)
+      function generateReport() {
+        const employeeName = document.getElementById('employeeName').value || 'No especificado';
+        const employeeId = document.getElementById('employeeId').value || 'No especificado';
+        const employeePosition = document.getElementById('employeePosition').value || 'No especificado';
+        const contractValue = contractSelect.value || '';
+        const contractText = contractSelect.querySelector(`option[value="${contractValue}"]`)?.textContent || 'No especificado';
+        const startDate = startDateInput.value || 'No especificado';
+        const endDate = endDateInput.value || '';
+        const eps = epsSelect.value || 'No especificado';
+        const pension = pensionSelect.value || 'No especificado';
+        const cesantias = cesantiasSelect.value || 'No especificado';
+        const requiresEnd = END_DATE_REQUIRED.has(contractSelect.value);
+
+        let entregados = [], noCumplen = [], pendientes = [];
+        const rows = checklistBody.querySelectorAll('tr[data-index]');
+        rows.forEach(row => {
+          const docName = row.querySelector('td:nth-child(2)').textContent.trim();
+          const status = row.querySelector('.status-check')?.value;
+          const observation = row.querySelector('textarea')?.value?.trim() || '';
+          const cant = row.querySelector('input[type=number]')?.value || '';
+          const calidad = row.querySelector('td:nth-child(5) select')?.value || '';
+          const docData = { name: docName, observation, cant, calidad };
+          if (status === 'entregado') entregados.push(docData);
+          else if (status === 'no') noCumplen.push(docData);
+          else if (status === 'pendiente') pendientes.push(docData);
+        });
+
+        const totalChecked = entregados.length + noCumplen.length + pendientes.length;
+        const complianceRate = totalChecked > 0 ? Math.round((entregados.length / totalChecked) * 100) : 0;
+
+        const listSection = (title, colorClass, arr, withCheckbox = false) => `
+          <div class="space-y-2">
+            <h3 class="font-semibold text-lg mb-2 flex items-center">
+              <span class="status-dot ${colorClass} mr-2"></span>${title} (${arr.length})
+            </h3>
+            <ul class="pl-0 text-sm text-gray-700 space-y-3">
+              ${arr.length ? arr.map(d => `
+                <li class="flex items-start gap-2">
+                  ${withCheckbox ? '<input type="checkbox" class="mt-1" />' : ''}
+                  <div>
+                    <span class="font-medium">${d.name}</span>
+                    ${d.cant || d.calidad ? `<span class="text-gray-500"> — Cant: ${d.cant || '-'} | Calidad: ${d.calidad || '-'}</span>` : ''}
+                    ${d.observation ? `<div class="text-gray-500"><em>${d.observation}</em></div>` : ''}
+                    ${withCheckbox ? `<div class="text-gray-500 text-xs mt-1">Fecha de entrega: ______________________</div>` : ''}
+                  </div>
+                </li>
+              `).join('') : '<li class="text-gray-500">Ninguno</li>'}
+            </ul>
+          </div>
+        `;
+
+        reportContent.innerHTML = `
+          <div class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <p><strong>Candidato:</strong> ${employeeName}</p>
+              <p><strong>Identificación:</strong> ${employeeId}</p>
+              <p><strong>Cargo:</strong> ${employeePosition}</p>
+              <p><strong>Vinculación/Contrato:</strong> ${contractText}</p>
+              <p><strong>Fecha de inicio:</strong> ${startDate}</p>
+              ${requiresEnd ? `<p><strong>Fecha de finalización:</strong> ${endDate || 'No especificado'}</p>` : ''}
+              <p><strong>EPS:</strong> ${eps}</p>
+              <p><strong>Pensiones:</strong> ${pension}</p>
+              <p><strong>Cesantías:</strong> ${cesantias}</p>
+            </div>
+
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+              <p class="text-lg font-semibold">Tasa de Cumplimiento: <span class="text-blue-600">${complianceRate}%</span></p>
+            </div>
+
+            ${listSection('Documentos Entregados', 'status-si', entregados, false)}
+            ${listSection('Documentos No Cumplen', 'status-no', noCumplen, false)}
+            ${listSection('Documentos Pendientes', 'status-pend', pendientes, true)}
+          </div>
+        `;
+      }
+
+      // Impresión en iframe (márgenes configurables)
+      function printInIframe(html, marginTB = '12mm', marginLR = '12mm') {
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        const baseStyles = `
+          <style>
+            @page { size: A4; margin: ${marginTB} ${marginLR}; }
+            * { box-sizing: border-box; }
+            body { font-family: Inter, Arial, sans-serif; color:#111; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            h1 { font-size: 18px; margin: 0 0 8px; }
+            h2 { font-size: 14px; margin: 12px 0 6px; }
+            h3 { font-size: 13px; margin: 10px 0 6px; }
+            p, li, td, th { font-size: 12px; line-height: 1.45; }
+            .meta { border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:10px; }
+            .meta table { width:100%; border-collapse: collapse; }
+            .meta td { padding:4px 6px; vertical-align: top; }
+            .section { margin: 8px 0; }
+            .list { margin:0; padding-left: 16px; }
+            .list li { margin: 6px 0; break-inside: avoid; }
+            .muted { color:#555; }
+            .table { width:100%; border-collapse: collapse; }
+            .table th, .table td { border:1px solid #ddd; padding:6px; }
+            .table th { background:#f5f5f5; }
+            .category { background:#f5f5f5; font-weight:600; }
+            .check { width: 28px; height: 28px; border: 2px solid #111; border-radius: 3px; display: inline-block; vertical-align: middle; }
+            .hdr { text-align:center; margin-bottom:10px; }
+            .hdr small { color:#555; }
+          </style>
+        `;
+        doc.open();
+        doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8">${baseStyles}</head><body>${html}</body></html>`);
+        doc.close();
+
+        const cleanup = () => setTimeout(() => { document.body.removeChild(iframe); }, 50);
+        iframe.onload = () => {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+          iframe.contentWindow.addEventListener('afterprint', cleanup, { once: true });
+          setTimeout(cleanup, 1000);
+        };
+      }
+
+      function headerPrint(title) {
+        return `
+          <div class="hdr">
+            <h1>${title}</h1>
+            <small>Fecha: ${new Date().toLocaleDateString('es-CO')}</small>
+          </div>
+          <div class="meta">
+            <table>
+              <tr>
+                <td><strong>Empresa:</strong> ARNOLD LÓPEZ AYALA</td>
+                <td><strong>NIT:</strong> 900.XXX.XXX-X</td>
+              </tr>
+            </table>
+          </div>
+        `;
+      }
+
+      // PDF: Reporte Digital (márgenes top/bottom compactos 5mm, laterales 12mm)
+      function printReportPDF() {
+        const employeeName = document.getElementById('employeeName').value || 'No especificado';
+        const employeeId = document.getElementById('employeeId').value || 'No especificado';
+        const employeePosition = document.getElementById('employeePosition').value || 'No especificado';
+        const contractValue = contractSelect.value || '';
+        const contractText = contractSelect.querySelector(`option[value="${contractValue}"]`)?.textContent || 'No especificado';
+        const startDate = startDateInput.value || 'No especificado';
+        const endDate = endDateInput.value || '';
+        const eps = epsSelect.value || 'No especificado';
+        const pension = pensionSelect.value || 'No especificado';
+        const cesantias = cesantiasSelect.value || 'No especificado';
+        const requiresEnd = END_DATE_REQUIRED.has(contractSelect.value);
+
+        let entregados = [], noCumplen = [], pendientes = [];
+        document.querySelectorAll('#checklist-body tr[data-index]').forEach(row => {
+          const docName = row.querySelector('td:nth-child(2)').textContent.trim();
+          const status = row.querySelector('.status-check')?.value;
+          const observation = row.querySelector('textarea')?.value?.trim() || '';
+          const cant = row.querySelector('input[type=number]')?.value || '';
+          const calidad = row.querySelector('td:nth-child(5) select')?.value || '';
+          const d = { name: docName, observation, cant, calidad };
+          if (status === 'entregado') entregados.push(d);
+          else if (status === 'no') noCumplen.push(d);
+          else if (status === 'pendiente') pendientes.push(d);
+        });
+
+        const totalChecked = entregados.length + noCumplen.length + pendientes.length;
+        const complianceRate = totalChecked > 0 ? Math.round((entregados.length / totalChecked) * 100) : 0;
+
+        const list = (arr, withCheckbox=false) => arr.length
+          ? `<ul class="list">${arr.map(d => `
+              <li>
+                ${withCheckbox ? '<input type="checkbox" style="transform: scale(1.1); margin-right:6px;"/>' : ''}
+                <strong>${d.name}</strong>
+                ${d.cant || d.calidad ? ` — <span class="muted">Cant: ${d.cant || '-'} | Calidad: ${d.calidad || '-'}</span>` : ''}
+                ${d.observation ? `<div class="muted"><em>${d.observation}</em></div>` : ''}
+                ${withCheckbox ? `<div class="muted" style="font-size:11px; margin-top:2px;">Fecha de entrega: ______________________</div>` : ''}
+              </li>
+            `).join('')}</ul>` : '<div class="muted">Ninguno</div>';
+
+        const html = `
+          ${headerPrint('Reporte de Verificación Documental')}
+          <div class="meta">
+            <table>
+              <tr><td><strong>Candidato:</strong> ${employeeName}</td><td><strong>Identificación:</strong> ${employeeId}</td></tr>
+              <tr><td><strong>Cargo:</strong> ${employeePosition}</td><td><strong>Contrato:</strong> ${contractText}</td></tr>
+              <tr>
+                <td><strong>Fecha de inicio:</strong> ${startDate}</td>
+                <td>${requiresEnd ? `<strong>Fecha de finalización:</strong> ${endDate || 'No especificado'}` : ''}</td>
+              </tr>
+              <tr><td><strong>EPS:</strong> ${eps}</td><td><strong>Pensiones:</strong> ${pension}</td></tr>
+              <tr><td><strong>Cesantías:</strong> ${cesantias}</td><td><strong>Tasa de cumplimiento:</strong> ${complianceRate}%</td></tr>
+            </table>
+          </div>
+
+          <h2>Documentos Entregados (${entregados.length})</h2>
+          ${list(entregados, false)}
+          <h2>Documentos No Cumplen (${noCumplen.length})</h2>
+          ${list(noCumplen, false)}
+          <h2>Documentos Pendientes (${pendientes.length})</h2>
+          ${list(pendientes, true)}
+        `;
+        printInIframe(html, '5mm', '12mm');
+      }
+
+      // PDF: Formato en blanco (manual)
+      function printBlankPDF() {
+        let rowsHTML = '';
+        let currentCategory = '';
+        let i = 0;
+        documents.forEach(doc => {
+          if (doc.category !== currentCategory) {
+            currentCategory = doc.category;
+            rowsHTML += `<tr class="category"><td colspan="7" class="category">${currentCategory}</td></tr>`;
+          }
+          i++;
+          rowsHTML += `
+            <tr>
+              <td style="text-align:center;">${i}</td>
+              <td>${doc.name}</td>
+              <td class="muted">${doc.criteria}</td>
+              <td style="text-align:center;">_____</td>
+              <td style="text-align:center;">________________</td>
+              <td style="text-align:center;"><span class="check"></span></td>
+              <td>_______________________________________________</td>
+            </tr>`;
+        });
+
+        const html = `
+          ${headerPrint('Lista de Chequeo de Documentación (Formato en Blanco)')}
+          <div class="meta">
+            <table>
+              <tr><td><strong>Candidato:</strong> ____________________________________________</td><td><strong>Identificación:</strong> ___________________________</td></tr>
+              <tr><td><strong>Cargo:</strong> _______________________________________________</td><td><strong>Tipo de Contrato/Vinculación:</strong> _________________________</td></tr>
+              <tr><td><strong>Fecha de inicio:</strong> ____ / ____ / ______</td><td><strong>Fecha de finalización:</strong> ____ / ____ / ______</td></tr>
+              <tr><td><strong>EPS:</strong> ____________________________________</td><td><strong>Pensiones:</strong> _____________________________</td></tr>
+              <tr><td><strong>Cesantías:</strong> _____________________________</td><td></td></tr>
+            </table>
+          </div>
+          <table class="table">
+            <thead><tr>
+              <th>Ítem</th><th>Documento</th><th>Criterios</th><th>Cant.</th><th>Calidad/Estado</th><th>Recibido</th><th>Observaciones</th>
+            </tr></thead>
+            <tbody>${rowsHTML}</tbody>
+          </table>
+
+          <div style="display:flex; gap:16px; margin-top:14px;">
+            <div style="flex:1;">
+              <p><strong>Responsable de Talento Humano:</strong></p>
+              <p>Nombre: ____________________________________________</p>
+              <p>Firma: ____________________________  Fecha: ____ / ____ / ______</p>
+            </div>
+            <div style="flex:1;">
+              <p><strong>Observaciones generales:</strong></p>
+              <div style="height:96px; border:1px dashed #999; border-radius:6px;"></div>
+            </div>
+          </div>
+        `;
+        printInIframe(html, '12mm', '12mm');
+      }
+
+      // Vista previa: formato en blanco
+      function generateBlank() {
+        blankContent.innerHTML = `
+          <div class="space-y-3 text-sm">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <p><strong>Empresa:</strong> ARNOLD LÓPEZ AYALA</p>
+              <p><strong>NIT:</strong> 900.XXX.XXX-X</p>
+              <p><strong>Candidato:</strong> ____________________________________________</p>
+              <p><strong>Identificación:</strong> ___________________________</p>
+              <p><strong>Cargo:</strong> _______________________________________________</p>
+              <p><strong>Tipo de Contrato/Vinculación:</strong> _________________________</p>
+              <p><strong>Fecha de inicio:</strong> ____ / ____ / ______</p>
+              <p><strong>Fecha de finalización:</strong> ____ / ____ / ______</p>
+              <p><strong>EPS:</strong> ____________________________________</p>
+              <p><strong>Pensiones:</strong> _____________________________</p>
+              <p><strong>Cesantías:</strong> _____________________________</p>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto mt-4">
+            <table class="w-full border border-gray-200 text-xs">
+              <thead class="bg-gray-100">
+                <tr>
+                  <th class="p-2 border">Ítem</th>
+                  <th class="p-2 border text-left">Documento</th>
+                  <th class="p-2 border text-left">Criterios</th>
+                  <th class="p-2 border">Cant.</th>
+                  <th class="p-2 border">Calidad/Estado</th>
+                  <th class="p-2 border">Recibido</th>
+                  <th class="p-2 border text-left">Observaciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(() => {
+                  let html = '', currentCategory = '', i = 0;
+                  documents.forEach(doc => {
+                    if (doc.category !== currentCategory) {
+                      currentCategory = doc.category;
+                      html += `<tr class="bg-gray-50"><td class="p-2 border text-left font-semibold" colspan="7">${currentCategory}</td></tr>`;
+                    }
+                    i++;
+                    html += `
+                      <tr>
+                        <td class="p-2 border text-center">${i}</td>
+                        <td class="p-2 border">${doc.name}</td>
+                        <td class="p-2 border text-gray-600">${doc.criteria}</td>
+                        <td class="p-2 border text-center">_____</td>
+                        <td class="p-2 border text-center">________________</td>
+                        <td class="p-2 border text-center"><span class="inline-block w-8 h-8 border-2 border-gray-700 rounded-sm align-middle"></span></td>
+                        <td class="p-2 border">_______________________________________________</td>
+                      </tr>`;
+                  });
+                  return html;
+                })()}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 text-sm">
+            <div>
+              <p><strong>Responsable de Talento Humano:</strong></p>
+              <p>Nombre: ____________________________________________</p>
+              <p>Firma: ____________________________  Fecha: ____ / ____ / ______</p>
+            </div>
+            <div>
+              <p><strong>Observaciones generales:</strong></p>
+              <div class="h-24 border border-dashed rounded-md"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Botones imprimir
+      printReportBtn.addEventListener('click', printReportPDF);
+      printBlankBtn.addEventListener('click', printBlankPDF);
+
+      // Refrescar contenidos al abrir
+      reportBtnTop.addEventListener('click', generateReport);
+      reportBtnBottom.addEventListener('click', generateReport);
+      blankBtnTop.addEventListener('click', generateBlank);
+      blankBtnBottom.addEventListener('click', generateBlank);
+    });
+  </script>
+</body>
+</html>
